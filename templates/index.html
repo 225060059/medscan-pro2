@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedScan Pro | Enterprise Cloud</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        /* --- PROFESSIONAL VARIABLES --- */
+        :root {
+            --primary: #0f172a;       /* Deep Navy */
+            --primary-light: #1e293b;
+            --accent: #3b82f6;        /* Corporate Blue */
+            --accent-hover: #2563eb;
+            --bg: #f1f5f9;            /* Slate White */
+            --card-bg: #ffffff;
+            --text: #334155;
+            --text-heading: #0f172a;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 10px;
+        }
+
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-light: #60a5fa;
+            --accent: #3b82f6;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #cbd5e1;
+            --text-heading: #f8fafc;
+            --border: #334155;
+        }
+
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; padding: 0; 
+            background-color: var(--bg); color: var(--text);
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        /* --- LOADING SPINNER --- */
+        #global-loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8); z-index: 9999;
+            display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(2px);
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid var(--border);
+            border-top: 4px solid var(--accent); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+       /* --- PROFESSIONAL LOGIN STYLES --- */
+        #login-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            /* Deep Corporate Gradient */
+            background: linear-gradient(135deg, #eaf0ff 0%, #1e3a8a 100%); 
+            display: flex; justify-content: center; align-items: center; z-index: 5000; 
+        }
+
+        .login-box { 
+            background: #ffffff; 
+            padding: 60px 50px; 
+            border-radius: 20px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+            width: 450px; 
+            text-align: center; 
+            position: relative; 
+            overflow: hidden;
+        }
+
+        /* Decorative top bar */
+        .login-box::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+        }
+
+        .login-icon {
+            font-size: 50px; margin-bottom: 15px; display: inline-block;
+            background: -webkit-linear-gradient(#3b82f6, #06b6d4);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .login-title {
+            color: #0f172a; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+        }
+
+        .login-subtitle {
+            color: #64748b; margin: 10px 0 40px; font-size: 15px; font-weight: 500;
+        }
+
+        .login-input { 
+            width: 100%; padding: 16px; margin-bottom: 16px; 
+            border: 2px solid #e2e8f0; border-radius: 12px; 
+            background: #f8fafc; color: #334155; outline: none; transition: 0.3s; font-size: 15px;
+        }
+
+        .login-input:focus { 
+            border-color: #3b82f6; background: #fff; 
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); 
+        }
+        
+        /* Special Login Button */
+        .btn-login { 
+            width: 100%; padding: 16px; 
+            background: linear-gradient(90deg, #3b82f6, #2563eb); 
+            color: white; border: none; border-radius: 12px; cursor: pointer; 
+            font-weight: 700; font-size: 16px; margin-top: 10px; 
+            transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4); 
+        }
+
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.5); }
+
+        .login-footer { margin-top: 30px; font-size: 12px; color: #94a3b8; }
+        
+        /* --- BUTTONS & INPUTS --- */
+        .btn { 
+            width: 100%; padding: 12px; background: var(--accent); color: white; 
+            border: none; border-radius: 8px; cursor: pointer; font-weight: 600; 
+            transition: 0.2s; font-size: 14px; letter-spacing: 0.5px;
+        }
+        .btn:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); background: transparent; box-shadow: none; }
+        
+        .login-input { 
+            width: 100%; padding: 12px 15px; margin: 8px 0 20px; 
+            border: 1px solid var(--border); border-radius: 8px; 
+            background: var(--bg); color: var(--text); outline: none; transition: 0.2s;
+        }
+        .login-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
+        /* --- NAVBAR --- */
+        .navbar { 
+            background-color: var(--card-bg); padding: 0 40px; height: 70px; 
+            display: flex; align-items: center; justify-content: space-between; 
+            position: sticky; top: 0; z-index: 100; 
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-logo { color: var(--accent); font-size: 20px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .nav-links { display: flex; gap: 5px; }
+        .nav-item { 
+            color: var(--text); padding: 10px 18px; text-decoration: none; 
+            border-radius: 8px; cursor: pointer; font-weight: 500; transition: 0.2s;
+        }
+        .nav-item:hover, .nav-item.active { background-color: var(--bg); color: var(--accent); font-weight: 600; }
+        
+        /* --- LAYOUT --- */
+        .page-section { display: none; padding: 40px; max-width: 1280px; margin: 0 auto; animation: slideUp 0.4s ease-out; }
+        .active-section { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { 
+            background-color: var(--card-bg); padding: 30px; border-radius: 12px; 
+            box-shadow: var(--shadow); margin-bottom: 25px; border: 1px solid var(--border); 
+        }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 25px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; }
+
+        .stat-card { text-align: left; position: relative; overflow: hidden; }
+        .stat-card::after { content: ''; position: absolute; right: -10px; top: -10px; width: 80px; height: 80px; border-radius: 50%; background: var(--bg); opacity: 0.5; }
+        .stat-num { font-size: 36px; font-weight: 700; color: var(--text-heading); margin: 10px 0 5px; }
+        .stat-label { font-size: 13px; color: var(--text); opacity: 0.8; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* --- TABLE --- */
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; }
+        th { background-color: var(--bg); color: var(--text); font-weight: 600; padding: 16px; text-align: left; border-bottom: 2px solid var(--border); font-size: 13px; text-transform: uppercase; }
+        td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); vertical-align: middle; }
+        tr:hover td { background-color: var(--bg); }
+        .status-tag { padding: 6px 12px; border-radius: 50px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 5px; }
+
+        /* --- DRAG & DROP AI --- */
+        .drag-area {
+            border: 2px dashed var(--border); border-radius: 12px; padding: 40px;
+            text-align: center; background: var(--bg); transition: 0.3s; cursor: pointer;
+        }
+        .drag-area:hover, .drag-area.active { border-color: var(--accent); background: rgba(59, 130, 246, 0.05); }
+        .drag-icon { font-size: 48px; color: var(--accent); margin-bottom: 15px; }
+
+        /* --- TOAST NOTIFICATIONS --- */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 6000; }
+        .toast {
+            background: var(--card-bg); color: var(--text); padding: 16px 20px;
+            margin-bottom: 10px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            border-left: 5px solid var(--accent); display: flex; align-items: center; gap: 15px;
+            animation: slideIn 0.3s forwards; max-width: 350px;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* --- MODALS --- */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 2000; backdrop-filter: blur(4px); justify-content: center; align-items: center; }
+        .modal-box { background: var(--card-bg); padding: 40px; border-radius: 16px; width: 500px; max-width: 95%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .close-modal { position: absolute; top: 20px; right: 25px; font-size: 24px; cursor: pointer; color: var(--text); opacity: 0.5; transition: 0.2s; }
+        .close-modal:hover { opacity: 1; color: var(--danger); }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div id="global-loader"><div class="spinner"></div></div>
+
+    <div id="toast-container"></div>
+
+   <div id="login-overlay">
+        <div class="login-box">
+            <div class="login-icon">✚</div>
+            
+            <h1 class="login-title">MedScan Pro</h1>
+            <p class="login-subtitle">Enterprise Cloud Portal</p>
+            
+            <form onsubmit="event.preventDefault(); attemptLogin();">
+                <input type="text" id="username" class="login-input" placeholder="User ID" autocomplete="off">
+                <input type="password" id="password" class="login-input" placeholder="Password">
+                <button type="submit" class="btn-login">Secure Access &rarr;</button>
+            </form>
+
+            <p id="login-error" style="color:#ef4444; display:none; margin-top:20px; font-size:13px; font-weight:600; background: #fef2f2; padding: 10px; border-radius: 8px;">⚠ Invalid Credentials</p>
+            
+            <div class="login-footer">
+                Authorized Personnel Only • v4.5.0<br>
+                <span style="opacity:0.6">Encryption: AES-256</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" style="display:none;">
+        <nav class="navbar">
+            <div class="nav-logo" onclick="nav('dashboard')">
+                <span style="font-size:24px;">🏥</span> MedScan Pro
+                <span id="user-role" style="font-size:11px; background:rgba(59, 130, 246, 0.1); color:var(--accent); padding:4px 10px; border-radius:20px; margin-left:12px; font-weight:600;">LOADING</span>
+            </div>
+            <div class="nav-links">
+                <a class="nav-item active" id="nav-dashboard" onclick="nav('dashboard')">Dashboard</a>
+                <a class="nav-item" id="nav-patients" onclick="nav('patients')">Patients</a>
+                <a class="nav-item" id="nav-analyze" onclick="nav('analyze')">AI Diagnosis</a>
+                <button onclick="toggleTheme()" style="background:none; border:none; cursor:pointer; font-size:18px; padding:0 15px;">🌗</button>
+                <a class="nav-item" onclick="logout()" style="color:var(--danger);">Log Out</a>
+            </div>
+        </nav>
+
+        <div id="dashboard" class="page-section active-section">
+            <div style="display:flex; justify-content:space-between; align-items:end; margin-bottom:30px;">
+                <div>
+                    <h1 style="margin:0; color:var(--text-heading); font-size:28px;">Welcome back, Dr. Rayan</h1>
+                    <p style="margin:5px 0 0; color:var(--text); opacity:0.7;" id="currentDate">System synchronization complete.</p>
+                </div>
+                <button type="button" class="btn" style="width:auto; padding: 10px 25px;" onclick="nav('analyze')">+ New AI Scan</button>
+            </div>
+
+            <div class="grid-4">
+                <div class="card stat-card" style="border-left: 4px solid var(--accent);">
+                    <div class="stat-label">Total Patients</div>
+                    <div class="stat-num" id="stat-total">0</div>
+                </div>
+                <div class="card stat-card" style="border-left: 4px solid var(--danger);">
+                    <div class="stat-label">Critical Cases</div>
+                    <div class="stat-num" id="stat-high">0</div>
+                </div>
+                <div class="card stat-card" style="border-left: 4px solid var(--warning);">
+                    <div class="stat-label">Pending Reviews</div>
+                    <div class="stat-num" id="stat-med">0</div>
+                </div>
+                <div class="card stat-card" style="border-left: 4px solid var(--success);">
+                    <div class="stat-label">Healthy / Low Risk</div>
+                    <div class="stat-num" id="stat-low">0</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:15px; font-size:16px;">Disease Distribution</h3>
+                    <div style="height:250px;"><canvas id="diseaseChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:15px; font-size:16px;">Weekly Patient Intake</h3>
+                    <div style="height:250px;"><canvas id="activityChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top:0; font-size:16px;">📜 Live System Audit</h3>
+                <div id="log-feed" style="max-height:150px; overflow-y:auto; font-family:'Courier New', monospace; font-size:12px; margin-top:15px;">
+                    <div style="padding:8px 0; color:var(--text); opacity:0.5;">Waiting for server logs...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="patients" class="page-section">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2 style="margin:0; font-size:22px; color:var(--text-heading);">Patient Database</h2>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="searchBox" placeholder="🔍 Search records..." onkeyup="filterPatients()" class="login-input" style="width:250px; margin:0;">
+                        <button class="btn btn-outline" style="width:auto;" onclick="exportToCSV()">Export CSV</button>
+                        <button class="btn" style="width:auto;" onclick="openAddModal()">Add Patient</button>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table id="patientTable">
+                        <thead><tr><th>ID</th><th>Name</th><th>Diagnosis</th><th>Risk Level</th><th>Actions</th></tr></thead>
+                        <tbody id="patientTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="analyze" class="page-section">
+            <div class="card" style="max-width:800px; margin:0 auto; text-align:center;">
+                <h1 style="color:var(--text-heading); margin-bottom:10px;">AI Diagnostic Tool</h1>
+                <p style="color:var(--text); opacity:0.7; margin-bottom:30px;">Upload a dermatoscopic image. The neural network will classify it instantly.</p>
+
+                <div class="drag-area" id="drop-zone" onclick="document.getElementById('imageInput').click()">
+                    <div class="drag-icon">☁️</div>
+                    <h3 style="margin:10px 0;">Drag & Drop image here</h3>
+                    <p style="margin:0; opacity:0.6;">or click to browse files</p>
+                    <input type="file" id="imageInput" accept="image/*" style="display:none;">
+                </div>
+
+                <div style="margin-top:25px;">
+                    <img id="preview" src="#" style="max-width:100%; max-height:350px; display:none; border-radius:12px; box-shadow:var(--shadow); margin:0 auto;">
+                </div>
+                
+                <div id="result-container" style="display:none; margin-top:30px; text-align:left; background:rgba(59, 130, 246, 0.05); padding:30px; border-radius:12px; border:1px solid var(--accent);">
+                    <div style="display:flex; justify-content:space-between;">
+                        <div>
+                            <span style="font-size:12px; font-weight:bold; color:var(--accent); letter-spacing:1px;">DETECTED CONDITION</span>
+                            <div id="disease-name" style="font-size:32px; font-weight:800; color:var(--text-heading); margin:5px 0;">Melanoma</div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div style="height:6px; background:#e2e8f0; width:150px; border-radius:3px; overflow:hidden;">
+                                    <div id="confidence-fill" style="height:100%; background:var(--success); width:0%;"></div>
+                                </div>
+                                <span id="confidence-text" style="font-size:13px; font-weight:600;">0%</span>
+                            </div>
+                        </div>
+                        <div id="severity-badge" class="status-tag" style="height:fit-content; font-size:12px;">ANALYZING</div>
+                    </div>
+                    
+                    <div style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(0,0,0,0.05);">
+                        <h4 style="margin:0 0 10px; color:var(--text-heading);">Recommended Protocol</h4>
+                        <p id="treatment-info" style="margin:0; line-height:1.6; color:var(--text);"></p>
+                    </div>
+
+                    <button class="btn btn-outline" style="margin-top:20px; width:auto; border-color:var(--text);" onclick="downloadScanPDF()">⬇ Download Full Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addModal" class="modal-overlay">
+        <div class="modal-box">
+            <span class="close-modal" onclick="closeAddModal()">&times;</span>
+            <h2 style="margin-top:0;">New Patient Record</h2>
+            <form onsubmit="event.preventDefault(); saveNewPatient();">
+                <label style="font-size:12px; font-weight:bold; color:var(--text);">FULL NAME</label>
+                <input type="text" id="newPatName" class="login-input" required>
+                <label style="font-size:12px; font-weight:bold; color:var(--text);">INITIAL DIAGNOSIS</label>
+                <select id="newPatDiag" class="login-input">
+                    <option value="Healthy">Healthy / Benign</option>
+                    <option value="Melanoma">Melanoma</option>
+                    <option value="Acne">Acne</option>
+                    <option value="Eczema">Eczema</option>
+                    <option value="Psoriasis">Psoriasis</option>
+                    <option value="Basal Cell Carcinoma">Basal Cell Carcinoma</option>
+                    <option value="Lupus">Lupus</option>
+                    <option value="Herpes">Herpes</option>
+                    <option value="Monkeypox">Monkeypox</option>
+                </select>
+                <button type="submit" class="btn">Save Record</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="emailModal" class="modal-overlay">
+        <div class="modal-box">
+            <span class="close-modal" onclick="closeEmailModal()">&times;</span>
+            <div style="text-align:center; margin-bottom:20px;">
+                <div style="font-size:40px; margin-bottom:10px;">📧</div>
+                <h2 style="margin:0;">Send Digital Report</h2>
+                <p style="opacity:0.7; font-size:14px;">Securely transmit PDF results via SMTP.</p>
+            </div>
+            <input type="email" id="emailRecipient" class="login-input" placeholder="patient@example.com">
+            <div style="display:flex; gap:10px;">
+                <button id="btnSendEmail" class="btn" onclick="confirmSendEmail()">Send Email</button>
+                <button class="btn btn-outline" onclick="closeEmailModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="smsModal" class="modal-overlay">
+        <div class="modal-box">
+            <span class="close-modal" onclick="closeSMSModal()">&times;</span>
+            <div style="text-align:center; margin-bottom:20px;">
+                <div style="font-size:40px; margin-bottom:10px;">📱</div>
+                <h2 style="margin:0;">SMS Notification</h2>
+                <p style="opacity:0.7; font-size:14px;">Send instant alert via Twilio Gateway.</p>
+            </div>
+            <input type="text" id="smsPhone" class="login-input" placeholder="+1 555 000 0000">
+            <div style="display:flex; gap:10px;">
+                <button id="btnSendSMS" class="btn" style="background:#f97316;" onclick="confirmSendSMS()">Send Text</button>
+                <button class="btn btn-outline" onclick="closeSMSModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <script>
+        const API_URL = "http://127.0.0.1:5000";
+        const MODEL_URL = "https://teachablemachine.withgoogle.com/models/zP-OkdKSX/";
+        
+        let patients = [];
+        let diseaseChartInstance = null;
+        let activityChartInstance = null;
+        let lastScanResult = null;
+        let emailTargetID = null;
+        let smsTargetID = null;
+
+        // --- TOAST NOTIFICATION SYSTEM ---
+        function showToast(msg, type='success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.borderLeftColor = type === 'error' ? 'var(--danger)' : 'var(--success)';
+            toast.innerHTML = `<div>${type === 'error' ? '❌' : '✅'}</div><div><strong>${type === 'error' ? 'Error' : 'Success'}</strong><div style="font-size:12px; opacity:0.9;">${msg}</div></div>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        function toggleLoader(show) { document.getElementById('global-loader').style.display = show ? 'flex' : 'none'; }
+
+        // --- EXPANDED MEDICAL DB (INFECTIOUS DISEASES ADDED) ---
+        const medicalDB = {
+            // --- HIGH RISK / CANCER ---
+            "Melanoma": { sev: "Critical", color: "#ef4444", protocol: "Immediate surgical excision. Oncology referral required." },
+            "mel": { sev: "Critical", color: "#ef4444", protocol: "Immediate surgical excision. Oncology referral required." },
+            "Basal Cell Carcinoma": { sev: "High", color: "#f97316", protocol: "Mohs micrographic surgery recommended." },
+            "bcc": { sev: "High", color: "#f97316", protocol: "Mohs micrographic surgery recommended." },
+            "Squamous Cell Carcinoma": { sev: "High", color: "#f97316", protocol: "Excision with clear margins." },
+            "Lupus": { sev: "High", color: "#ef4444", protocol: "Autoimmune (SLE). Rheumatology referral required." },
+
+            // --- INFECTIOUS DISEASES (Added Back) ---
+            "Monkeypox": { sev: "High", color: "#f97316", protocol: "Viral infection. Isolation required. Supportive care." },
+            "Sarampion": { sev: "High", color: "#ef4444", protocol: "Measles. Highly contagious. Vitamin A & Isolation." },
+            "Sarna": { sev: "Moderate", color: "#f59e0b", protocol: "Scabies. Permethrin 5% cream. Treat household contacts." },
+            "Varicela": { sev: "Moderate", color: "#f59e0b", protocol: "Chickenpox. Antivirals if caught early. Isolation." },
+            "Herpes": { sev: "Moderate", color: "#f59e0b", protocol: "Oral Acyclovir or Valacyclovir." },
+
+            // --- BENIGN / SAFE ---
+            "Nevus": { sev: "Safe", color: "#10b981", protocol: "Benign mole. No treatment needed." },
+            "nv": { sev: "Safe", color: "#10b981", protocol: "Benign mole. No treatment needed." },
+            "Healthy": { sev: "Safe", color: "#10b981", protocol: "Routine skin care. Use SPF 50+ daily." },
+            "Acne": { sev: "Low", color: "#10b981", protocol: "Topical Benzoyl Peroxide & Retinoids." },
+            "Eczema": { sev: "Moderate", color: "#f59e0b", protocol: "Moisturizers and topical corticosteroids." },
+            "Psoriasis": { sev: "Moderate", color: "#f59e0b", protocol: "Salicylic acid, phototherapy." }
+        };
+        
+        function getMedicalInfo(name) {
+            if(!name) return { sev: "Unknown", color: "#94a3b8", protocol: "No data available." };
+            // Check for exact match or substring match
+            for(const k in medicalDB) {
+                if (name.toLowerCase() === k.toLowerCase() || name.toLowerCase().includes(k.toLowerCase())) {
+                    return medicalDB[k];
+                }
+            }
+            return { sev: "Unknown", color: "#94a3b8", protocol: "Standard observation." };
+        }
+
+        // --- AUTH & INIT ---
+        async function attemptLogin() {
+            const u = document.getElementById("username").value;
+            const p = document.getElementById("password").value;
+            if(!u || !p) return showToast("Please enter credentials", "error");
+            
+            toggleLoader(true);
+            try {
+                const res = await fetch(API_URL + '/login', { 
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({username: u, password: p}) 
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    document.getElementById("login-overlay").style.display = "none";
+                    document.getElementById("app-container").style.display = "block";
+                    document.getElementById("user-role").innerText = data.role.toUpperCase();
+                    initApp();
+                } else {
+                    document.getElementById("login-error").style.display = "block";
+                }
+            } catch(e) { showToast("Server Offline. Start Python Backend.", "error"); }
+            toggleLoader(false);
+        }
+
+        function initApp() {
+            document.getElementById("currentDate").innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            fetchPatients();
+            fetchLogs();
+            initAI();
+        }
+
+        async function fetchPatients() {
+            try {
+                const res = await fetch(API_URL + '/patients');
+                patients = await res.json();
+                renderTable();
+                updateDashboard();
+                if (document.getElementById("dashboard").style.display !== "none") initCharts();
+            } catch (e) { console.log("API Error"); }
+        }
+
+        async function fetchLogs() {
+            try {
+                const res = await fetch(API_URL + '/logs');
+                const logs = await res.json();
+                const feed = document.getElementById("log-feed");
+                feed.innerHTML = "";
+                logs.forEach(log => {
+                    feed.innerHTML += `<div style="padding:6px 0; border-bottom:1px solid var(--border); display:flex; gap:10px;">
+                        <span style="opacity:0.6;">${log.timestamp.split(' ')[1]}</span>
+                        <span style="font-weight:bold; color:var(--accent);">${log.action}</span>
+                        <span>${log.details}</span>
+                    </div>`;
+                });
+            } catch(e){}
+        }
+
+        // --- ACTIONS ---
+        async function saveNewPatient() {
+            const name = document.getElementById("newPatName").value;
+            const diag = document.getElementById("newPatDiag").value;
+            toggleLoader(true);
+            try {
+                const res = await fetch(API_URL + '/patients', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name, diag })
+                });
+                if(res.ok) {
+                    closeAddModal();
+                    document.getElementById("newPatName").value = "";
+                    fetchPatients();
+                    showToast("Patient record saved");
+                }
+            } catch(e) { showToast("Save failed", "error"); }
+            toggleLoader(false);
+        }
+
+        async function deletePatient(id) {
+            if(!confirm("Delete record " + id + "?")) return;
+            toggleLoader(true);
+            await fetch(API_URL + '/patients/' + id, { method: 'DELETE' });
+            fetchPatients();
+            showToast("Record deleted");
+            toggleLoader(false);
+        }
+
+        async function confirmSendEmail() {
+            const email = document.getElementById("emailRecipient").value;
+            if(!email) return showToast("Enter email address", "error");
+            toggleLoader(true);
+            try {
+                const res = await fetch(API_URL + '/email/' + emailTargetID, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email }) });
+                if(res.ok) { showToast("Email sent successfully!"); closeEmailModal(); }
+                else { showToast("Email failed to send", "error"); }
+            } catch(e) { showToast("Connection error", "error"); }
+            toggleLoader(false);
+        }
+
+        async function confirmSendSMS() {
+            const phone = document.getElementById("smsPhone").value;
+            toggleLoader(true);
+            try {
+                const res = await fetch(API_URL + '/sms/' + smsTargetID, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ phone }) });
+                if(res.ok) { showToast("SMS Sent!"); closeSMSModal(); }
+                else { showToast("SMS Failed", "error"); }
+            } catch(e) { showToast("Connection error", "error"); }
+            toggleLoader(false);
+        }
+
+        // --- DASHBOARD ---
+        function updateDashboard() {
+            const total = patients.length;
+            const high = patients.filter(p => getMedicalInfo(p.diag).sev === "Critical" || getMedicalInfo(p.diag).sev === "High").length;
+            const med = patients.filter(p => getMedicalInfo(p.diag).sev === "Moderate").length;
+            const low = total - high - med;
+            
+            document.getElementById("stat-total").innerText = total;
+            document.getElementById("stat-high").innerText = high;
+            document.getElementById("stat-med").innerText = med;
+            document.getElementById("stat-low").innerText = low;
+        }
+
+        function initCharts() {
+            const dashboard = document.getElementById("dashboard");
+            if (!dashboard || window.getComputedStyle(dashboard).display === "none") return;
+
+            // --- 1. DISEASE CHART (Distinct Colors) ---
+            const counts = {};
+            patients.forEach(p => { 
+                const d = p.diag || "Unknown"; 
+                counts[d] = (counts[d] || 0) + 1; 
+            });
+
+            const diseaseLabels = Object.keys(counts);
+            const diseaseValues = Object.values(counts);
+            
+            // A palette of 12 distinct colors to cycle through
+            const palette = [
+                '#007bff', // Blue
+                '#28a745', // Green
+                '#dc3545', // Red
+                '#ffc107', // Yellow
+                '#17a2b8', // Teal
+                '#6610f2', // Purple
+                '#fd7e14', // Orange
+                '#e83e8c', // Pink
+                '#6c757d', // Grey
+                '#343a40', // Dark
+                '#20c997', // Mint
+                '#6f42c1'  // Indigo
+            ];
+
+            // Assign a unique color to each slice
+            const distinctColors = diseaseLabels.map((_, index) => palette[index % palette.length]);
+
+            if(diseaseChartInstance) diseaseChartInstance.destroy();
+            diseaseChartInstance = new Chart(document.getElementById('diseaseChart'), {
+                type: 'doughnut',
+                data: { 
+                    labels: diseaseLabels, 
+                    datasets: [{ 
+                        data: diseaseValues, 
+                        backgroundColor: distinctColors, // <--- DISTINCT COLORS
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { position: 'right', labels: { usePointStyle: true } } }, 
+                    cutout: '65%' 
+                }
+            });
+
+            // --- 2. ACTIVITY CHART (Real Data Fix) ---
+            const days = [];
+            const dailyCounts = [];
+            
+            // Calculate last 5 days
+            for (let i = 4; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                
+                // Format: "YYYY-MM-DD" to match database format
+                // Note: 'en-CA' is a shortcut to get YYYY-MM-DD format
+                const dateStr = d.toLocaleDateString('en-CA'); 
+                const dayName = d.toLocaleDateString('en-US', { weekday: 'short' }); // "Mon", "Tue"
+                
+                // Count patients for this specific date
+                const count = patients.filter(p => p.date === dateStr).length;
+                
+                days.push(dayName);
+                dailyCounts.push(count);
+            }
+
+            if(activityChartInstance) activityChartInstance.destroy();
+            activityChartInstance = new Chart(document.getElementById('activityChart'), {
+                type: 'bar',
+                data: { 
+                    labels: days, 
+                    datasets: [{ 
+                        label: 'New Patients', 
+                        data: dailyCounts, // <--- REAL DATA
+                        backgroundColor: '#003366', 
+                        borderRadius: 4,
+                        barPercentage: 0.6
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: { 
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }, 
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // --- RENDER TABLE ---
+        function renderTable() {
+            const tbody = document.getElementById("patientTableBody");
+            tbody.innerHTML = "";
+            patients.forEach(p => {
+                const info = getMedicalInfo(p.diag);
+                tbody.innerHTML += `<tr>
+                    <td style="font-weight:bold; color:var(--text);">${p.id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.diag}</td>
+                    <td><span class="status-tag" style="background:${info.color}20; color:${info.color}; border:1px solid ${info.color};">${info.sev}</span></td>
+                    <td>
+                        <button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="emailTargetID='${p.id}'; openEmailModal()">Email</button>
+                        <button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="smsTargetID='${p.id}'; openSMSModal()">SMS</button>
+                        <button class="btn btn-outline" style="padding:5px 10px; font-size:12px; border-color:var(--danger); color:var(--danger);" onclick="deletePatient('${p.id}')">Delete</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        // --- AI LOGIC ---
+        let model;
+        async function initAI() { model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json"); }
+        
+        const dropZone = document.getElementById('drop-zone');
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('active'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); dropZone.classList.remove('active');
+            handleImage(e.dataTransfer.files[0]);
+        });
+        document.getElementById('imageInput').onchange = (e) => handleImage(e.target.files[0]);
+
+        async function handleImage(file) {
+            if (!file) return;
+            const img = document.getElementById('preview');
+            img.src = window.URL.createObjectURL(file);
+            img.style.display = "block";
+            toggleLoader(true);
+            
+            img.onload = async () => {
+                const prediction = await model.predict(img);
+                let highest = { probability: 0, className: "" };
+                prediction.forEach(p => { if(p.probability > highest.probability) highest = p; });
+                
+                const info = getMedicalInfo(highest.className);
+                document.getElementById("result-container").style.display = "block";
+                document.getElementById("disease-name").innerText = highest.className;
+                document.getElementById("confidence-text").innerText = (highest.probability * 100).toFixed(1) + "% Confidence";
+                document.getElementById("confidence-fill").style.width = (highest.probability * 100) + "%";
+                document.getElementById("severity-badge").innerText = info.sev;
+                document.getElementById("severity-badge").style.backgroundColor = info.color;
+                document.getElementById("severity-badge").style.color = "white";
+                document.getElementById("treatment-info").innerText = info.protocol;
+
+                lastScanResult = { disease: highest.className, severity: info.sev, protocol: info.protocol };
+                try { fetch(API_URL + '/predict', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message: highest.className }) }); } catch(e){}
+                setTimeout(fetchLogs, 1000);
+                toggleLoader(false);
+            }
+        }
+
+        // --- PDF & UTILS ---
+        function downloadScanPDF() {
+            if(!lastScanResult) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("MedScan AI Report", 20, 20);
+            doc.text(`Condition: ${lastScanResult.disease}`, 20, 40);
+            doc.text(`Severity: ${lastScanResult.severity}`, 20, 50);
+            doc.text(`Protocol: ${lastScanResult.protocol}`, 20, 60);
+            doc.save("Scan_Report.pdf");
+        }
+
+        function exportToCSV() {
+            let csv = "ID,Name,Diagnosis\n";
+            patients.forEach(p => csv += `${p.id},${p.name},${p.diag}\n`);
+            const link = document.createElement("a");
+            link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
+            link.download = "patients.csv";
+            link.click();
+        }
+
+        function nav(id) {
+            document.querySelectorAll('.page-section').forEach(x => x.classList.remove('active-section'));
+            document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+            document.getElementById(id).classList.add('active-section');
+            document.getElementById('nav-'+id).classList.add('active');
+            if (id === 'dashboard') setTimeout(initCharts, 200);
+        }
+        function toggleTheme() {
+            const b = document.body;
+            b.setAttribute('data-theme', b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        }
+        function openAddModal() { document.getElementById("addModal").style.display = "flex"; }
+        function closeAddModal() { document.getElementById("addModal").style.display = "none"; }
+        function openEmailModal() { document.getElementById("emailModal").style.display = "flex"; }
+        function closeEmailModal() { document.getElementById("emailModal").style.display = "none"; }
+        function openSMSModal() { document.getElementById("smsModal").style.display = "flex"; }
+        function closeSMSModal() { document.getElementById("smsModal").style.display = "none"; }
+        function logout() { location.reload(); }
+    </script>
+</body>
+</html>
